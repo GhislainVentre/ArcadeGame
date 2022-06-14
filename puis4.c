@@ -76,7 +76,7 @@ int main() {
 
     //init mp3 music
     Mix_Music *music;
-    music = Mix_LoadMUS("ressources/wideputin.mp3");
+    music = Mix_LoadMUS("ressources/SoundEffects/wideputin.mp3");
     Mix_PlayMusic(music, -1);
 
     // change volume
@@ -307,8 +307,8 @@ void init() {
 		game.state = QUIT;
 	}
     TTF_Init();
-    font64 = TTF_OpenFont("ressources/bigpress.ttf", 64);
-    font40 = TTF_OpenFont("ressources/bigpress.ttf", 40);
+    font64 = TTF_OpenFont("ressources/fonts/bigpress.ttf", 64);
+    font40 = TTF_OpenFont("ressources/fonts/bigpress.ttf", 40);
 
     //get screen size
 	//SDL_DisplayMode dm;
