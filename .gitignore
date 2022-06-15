@@ -1,7 +1,8 @@
 *.txt
 .git
 server
+client
+network
 puis4
 pong
 test
-
