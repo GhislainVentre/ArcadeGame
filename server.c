@@ -15,7 +15,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 
-#include "customSTD.h"
+#include "headers/customSTD.h"
 
 #define MAX_CLIENTS 10
 #define MAX_ROOMS 5
@@ -58,7 +58,7 @@ room_t *rooms[MAX_ROOMS];
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t rooms_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#include "queueManager.h"
+#include "headers/queueManager.h"
 
 void send_message(char *message, int uid)
 {
@@ -400,113 +400,7 @@ void *handle_client(void *arg)
                                 setbuf(stdin, 0);
                                 bzero(buffer, BUFFER_SZ);
                                 sprintf(buffer, "%i", number);
-/*
-                                int linhaJogada = posicoes[number - 1][0];
-                                int colunaJogada = posicoes[number - 1][1];
-                                if (rooms[j]->game->turnoDoJogador == rooms[j]->player1->uid)
-                                {
-                                    send_message(buffer, rooms[j]->player2->uid);
-                                    rooms[j]->game->tabuleiro[linhaJogada][colunaJogada] = 'X';
-                                    rooms[j]->game->turnoDoJogador = rooms[j]->player2->uid;
-                                } 
-                                else if (rooms[j]->game->turnoDoJogador == rooms[j]->player2->uid)
-                                {
-                                    send_message(buffer, rooms[j]->player1->uid);
-                                    rooms[j]->game->tabuleiro[linhaJogada][colunaJogada] = 'O';
-                                    rooms[j]->game->turnoDoJogador = rooms[j]->player1->uid;
-                                }
-
-                                for (int iterator = 0; iterator < 3; iterator++)
-                                {
-                                    if (
-                                        (
-                                            (rooms[j]->game->tabuleiro[iterator][0] == rooms[j]->game->tabuleiro[iterator][1]) && (rooms[j]->game->tabuleiro[iterator][1] == rooms[j]->game->tabuleiro[iterator][2]) && rooms[j]->game->tabuleiro[iterator][0] != '-'
-                                        )
-                                            ||
-                                        (
-                                            (rooms[j]->game->tabuleiro[0][iterator] == rooms[j]->game->tabuleiro[1][iterator]) && (rooms[j]->game->tabuleiro[1][iterator] == rooms[j]->game->tabuleiro[2][iterator]) && rooms[j]->game->tabuleiro[0][iterator] != '-'
-                                        )
-                                    )
-                                    {
-                                        rooms[j]->game->estadoDeJogo = 0;
-                                    }
-                                }
-
-                                if (
-                                    (
-                                        (rooms[j]->game->tabuleiro[0][0] == rooms[j]->game->tabuleiro[1][1]) && (rooms[j]->game->tabuleiro[1][1] == rooms[j]->game->tabuleiro[2][2]) && rooms[j]->game->tabuleiro[0][0] != '-'
-                                    )
-                                        ||
-                                    (
-                                        (rooms[j]->game->tabuleiro[0][2] == rooms[j]->game->tabuleiro[1][1]) && (rooms[j]->game->tabuleiro[1][1] == rooms[j]->game->tabuleiro[2][0]) && rooms[j]->game->tabuleiro[0][2] != '-'
-                                    )
-                                )
-                                {
-                                    rooms[j]->game->estadoDeJogo = 0;
-                                }
-
-                                sleep(1);
-
-                                if (rooms[j]->game->estadoDeJogo == 0)
-                                {
-                                    strcpy(rooms[j]->state, "waiting start");
-
-                                    if (rooms[j]->game->turnoDoJogador == rooms[j]->player1->uid)
-                                    {
-                                        bzero(buffer, BUFFER_SZ);
-                                        sprintf(buffer, "win1\n");
-                                        send_message(buffer, rooms[j]->player1->uid);
-
-                                        sleep(0.5);
-
-                                        send_message(buffer, rooms[j]->player2->uid);
-                                    }
-                                    else if (rooms[j]->game->turnoDoJogador == rooms[j]->player2->uid)
-                                    {
-                                        bzero(buffer, BUFFER_SZ);
-                                        sprintf(buffer, "win2\n");
-                                        send_message(buffer, rooms[j]->player1->uid);
-
-                                        sleep(0.5);
-
-                                        send_message(buffer, rooms[j]->player2->uid);
-                                    }
-
-                                    bzero(buffer, BUFFER_SZ);
-                                    sprintf(buffer, "ok");
-                                    send_message(buffer, rooms[j]->player1->uid);
-
-                                    sleep(0.5);
-
-                                    send_message(buffer, rooms[j]->player2->uid);
-                                    break;
-                                }
-
-                                if (rooms[j]->game->turnoDoJogador == rooms[j]->player1->uid)
-                                {
-                                    bzero(buffer, BUFFER_SZ);
-                                    sprintf(buffer, "vez1\n");
-                                    send_message(buffer, rooms[j]->player1->uid);
-
-                                    sleep(0.5);
-
-                                    bzero(buffer, BUFFER_SZ);
-                                    sprintf(buffer, "vez2\n");
-                                    send_message(buffer, rooms[j]->player2->uid);
-                                }
-                                else if (rooms[j]->game->turnoDoJogador == rooms[j]->player2->uid)
-                                {
-                                    bzero(buffer, BUFFER_SZ);
-                                    sprintf(buffer, "vez2\n");
-                                    send_message(buffer, rooms[j]->player1->uid);
-
-                                    sleep(0.5);
-
-                                    bzero(buffer, BUFFER_SZ);
-                                    sprintf(buffer, "vez1\n");
-                                    send_message(buffer, rooms[j]->player2->uid);
-                                }
-*/
+                                
                                 rooms[j]->game->rodada++;
                             }
                             break;
