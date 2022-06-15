@@ -57,6 +57,7 @@ SDL_Window *window;
 SDL_Renderer *renderer;
 TTF_Font *font24;
 TTF_Font *font32;
+TTF_Font *font40;
 TTF_Font *font64;
 
 // Sound effects
@@ -80,83 +81,94 @@ int wrect;
 // ip or port
 int i1 = 4, i2 = 6, iporsocket = 0;
 
+
 int main(int argc, char ** argv)
 {
     init();
 
+	uint32_t a = SDL_GetTicks();
+	uint32_t b = SDL_GetTicks();
+	double delta = 0;
+
     SDL_Event event;
     while (game.state != QUIT) {
 
-		event_handler();
+		a = SDL_GetTicks();
+    	delta = a - b;
 
-        // Render background
-		SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
-		SDL_Rect rect = {0, 0, width, height}; 
-		SDL_RenderFillRect(renderer, &rect);
-		SDL_Color textColor = {255, 255, 255};
+		if(delta >= 1000/60) {
 
-        switch(game.state) {
-            case LOCAL:
-                
-				update_ball();
-                render_score();
+			event_handler();
 
-				// Render players / ball
-                SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
-		    	SDL_RenderFillRect(renderer, &player1);
-    			SDL_RenderFillRect(renderer, &player2);
-    			SDL_RenderFillRect(renderer, &ball);
-				// if scored
-		    	if(game.goal) {
-	    			char player_point[20];
-    				sprintf(player_point, "Player %d made a point", game.goal);
-				    SDL_Surface *textSurface = TTF_RenderText_Solid(TTF_OpenFont("fonts/bit5x3.ttf", 40), player_point, textColor);
-			    	SDL_Texture *textTexture3 = SDL_CreateTextureFromSurface(renderer, textSurface);
-		    		SDL_Rect textRect = {(width - textSurface->w)/2, height/2 - 5*textSurface->h, textSurface->w, textSurface->h};
-	    			SDL_RenderCopy(renderer, textTexture3, NULL, &textRect);
-    				if(ballparam.vx < 0) ballparam.vx = -ispeed;
-			    	else ballparam.vx = ispeed;
-		    		ballparam.vy = -ballparam.vy;
-	    			ballparam.bounced_tot = 0;
-    			}
-                break;
-			case ONLINEMENU:
-				render_online_menu();
-				break;
-            case MENU:
-                render_menu();
-                break;
-			case GAMEMODE:
-				render_gamemode();
-				break;
-            case OPTIONS:
-                render_options();
-                break;
-            case END:
-                render_winner();
-	    		game.score1 = 0;
-		    	game.score2 = 0;
-    			ballparam.bounced = 0;
-	    		ballparam.bounced_tot = 0;
-                break;    
-			default:
-				break;
-        }
+			// Render background
+			SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+			SDL_Rect rect = {0, 0, width, height}; 
+			SDL_RenderFillRect(renderer, &rect);
+			SDL_Color textColor = {255, 255, 255};
 
-    	SDL_RenderPresent(renderer);
-		// add delay
-		if(game.goal) {
-			SDL_Delay(990);
-			game.goal = 0;
-			    ball.x = ballparam.ix;
-			    ball.y = ballparam.iy;
-		} 
-		if(game.state == END) {
-			SDL_Delay(990);
-            game.state = MENU;
+			switch(game.state) {
+				case LOCAL:
+					
+					update_ball();
+					render_score();
+
+					// Render players / ball
+					SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+					SDL_RenderFillRect(renderer, &player1);
+					SDL_RenderFillRect(renderer, &player2);
+					SDL_RenderFillRect(renderer, &ball);
+					// if scored
+					if(game.goal) {
+						char player_point[20];
+						sprintf(player_point, "Player %d made a point", game.goal);
+						SDL_Surface *textSurface = TTF_RenderText_Solid(font40, player_point, textColor);
+						SDL_Texture *textTexture3 = SDL_CreateTextureFromSurface(renderer, textSurface);
+						SDL_Rect textRect = {(width - textSurface->w)/2, height/2 - 5*textSurface->h, textSurface->w, textSurface->h};
+						SDL_RenderCopy(renderer, textTexture3, NULL, &textRect);
+						if(ballparam.vx < 0) ballparam.vx = -ispeed;
+						else ballparam.vx = ispeed;
+						ballparam.vy = -ballparam.vy;
+						ballparam.bounced_tot = 0;
+					}
+					break;
+				case ONLINEMENU:
+					render_online_menu();
+					break;
+				case MENU:
+					render_menu();
+					break;
+				case GAMEMODE:
+					render_gamemode();
+					break;
+				case OPTIONS:
+					render_options();
+					break;
+				case END:
+					render_winner();
+					game.score1 = 0;
+					game.score2 = 0;
+					ballparam.bounced = 0;
+					ballparam.bounced_tot = 0;
+					break;    
+				default:
+					break;
+			}
+
+			SDL_RenderPresent(renderer);
+			// add delay
+			if(game.goal) {
+				SDL_Delay(990);
+				game.goal = 0;
+					ball.x = ballparam.ix;
+					ball.y = ballparam.iy;
+			} 
+			if(game.state == END) {
+				SDL_Delay(990);
+				game.state = MENU;
+			}
+			b = a;
+			SDL_RenderClear(renderer);
 		}
-		SDL_RenderClear(renderer);
- 		SDL_Delay(10);
     }
 
     // Free resources and close SDL
@@ -177,6 +189,11 @@ void event_handler() {
                	break;
 			case SDL_WINDOWEVENT:
 				if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+					//get screen size
+					SDL_DisplayMode dm;
+					SDL_GetCurrentDisplayMode(0, &dm);
+					width = dm.w;
+					height = dm.h;
 					width = event.window.data1;
 					height = event.window.data2;
 					hrect = height/4;
@@ -380,9 +397,10 @@ void init() {
 	}
 	TTF_Init();
 
-	font24 = TTF_OpenFont("fonts/bit5x3.ttf", 24);
-	font32 = TTF_OpenFont("fonts/bit5x3.ttf", 32);
-	font64 = TTF_OpenFont("fonts/bit5x3.ttf", 64);
+	font24 = TTF_OpenFont("ressources/fonts/bit5x3.ttf", 24);
+	font32 = TTF_OpenFont("ressources/fonts/bit5x3.ttf", 32);
+	font40 = TTF_OpenFont("ressources/fonts/bit5x3.ttf", 40);
+	font64 = TTF_OpenFont("ressources/fonts/bit5x3.ttf", 64);
 
 	//get screen size
 	SDL_DisplayMode dm;
@@ -405,27 +423,27 @@ void init() {
 	Mix_AllocateChannels(2);
 
 	//load wav
-	sound_bounce = Mix_LoadWAV_RW(SDL_RWFromFile("SoundEffects/bounce.wav","rb"), 1);
+	sound_bounce = Mix_LoadWAV_RW(SDL_RWFromFile("ressources/SoundEffects/bounce.wav","rb"), 1);
 	if(!sound_bounce) {
 		printf("Mix_LoadWAV Error : %s\n", Mix_GetError());
 		game.state = QUIT;
 	}
-	sound_menu = Mix_LoadWAV_RW(SDL_RWFromFile("SoundEffects/menu.wav","rb"), 1);
+	sound_menu = Mix_LoadWAV_RW(SDL_RWFromFile("ressources/SoundEffects/menu.wav","rb"), 1);
 	if(!sound_menu) {
 		printf("Mix_LoadWAV Error : %s\n", Mix_GetError());
 		game.state = QUIT;
 	}
-	sound_bounce_wall = Mix_LoadWAV_RW(SDL_RWFromFile("SoundEffects/bounce_wall.wav","rb"), 1);
+	sound_bounce_wall = Mix_LoadWAV_RW(SDL_RWFromFile("ressources/SoundEffects/bounce_wall.wav","rb"), 1);
 	if(!sound_bounce_wall) {
 		printf("Mix_LoadWAV Error : %s\n", Mix_GetError());
 		game.state = QUIT;
 	}
-	sound_point = Mix_LoadWAV_RW(SDL_RWFromFile("SoundEffects/point.wav","rb"), 1);
+	sound_point = Mix_LoadWAV_RW(SDL_RWFromFile("ressources/SoundEffects/point.wav","rb"), 1);
 	if(!sound_point) {
 		printf("Mix_LoadWAV Error : %s\n", Mix_GetError());
 		game.state = QUIT;
 	}
-	sound_endgame = Mix_LoadWAV_RW(SDL_RWFromFile("SoundEffects/endgame.wav","rb"), 1);
+	sound_endgame = Mix_LoadWAV_RW(SDL_RWFromFile("ressources/SoundEffects/endgame.wav","rb"), 1);
 	if(!sound_endgame) {
 		printf("Mix_LoadWAV Error : %s\n", Mix_GetError());
 		game.state = QUIT;
@@ -531,13 +549,13 @@ void render_score() {
 	sprintf(score2_str, "%d", game.score2);
 
 	// draw score
-	SDL_Surface *textSurface7 = TTF_RenderText_Solid(TTF_OpenFont("fonts/bit5x3.ttf", 40), score1_str, textColor);
+	SDL_Surface *textSurface7 = TTF_RenderText_Solid(font40, score1_str, textColor);
 	SDL_Texture *textTexture7 = SDL_CreateTextureFromSurface(renderer, textSurface7);
 	SDL_Rect textRect7 = {width / 2 - width / 15, height / 20 + textSurface7->h, textSurface7->w, textSurface7->h};
 	SDL_RenderCopy(renderer, textTexture7, NULL, &textRect7);
 	SDL_FreeSurface(textSurface7);
 	SDL_DestroyTexture(textTexture7);
-	SDL_Surface *textSurface8 = TTF_RenderText_Solid(TTF_OpenFont("fonts/bit5x3.ttf", 40), score2_str, textColor);
+	SDL_Surface *textSurface8 = TTF_RenderText_Solid(font40, score2_str, textColor);
 	SDL_Texture *textTexture8 = SDL_CreateTextureFromSurface(renderer, textSurface8);
 	SDL_Rect textRect8 = {width / 2 + width / 15, height / 20 + textSurface8->h, textSurface8->w, textSurface8->h};
 	SDL_RenderCopy(renderer, textTexture8, NULL, &textRect8);
