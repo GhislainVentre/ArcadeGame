@@ -1,4 +1,5 @@
 *.txt
 .git
 server
-puissance4
+puissance4.c
+client
