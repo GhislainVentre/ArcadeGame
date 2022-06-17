@@ -14,4 +14,4 @@ slidebar: slidebar.c
 	gcc -o slidebar -I/usr/include/SDL2 slidebar.c -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSDL2
 
 clear:
-	rm -f puis4 pong
+	rm -f puis4 pong server slidebar client
