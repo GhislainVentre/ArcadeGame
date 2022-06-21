@@ -1,22 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <errno.h>
-#include <signal.h>
-#include <unistd.h>
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-
-#include <pthread.h>
-#include <sys/types.h>
-
-#include "headers/customSTD.h"
-
 #include <SDL2/SDL.h> 
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
@@ -25,30 +6,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_CLIENTS 100
-#define BUFFER_SZ 2048
-#define NAME_LEN 32
-
-volatile sig_atomic_t flag = 0;
-int sockfd = 0;
-char name[NAME_LEN];
-int player = 1;
-
-void *lobby(void *arg);
-void recv_msg_handler();
-int event_handler();
-
-pthread_t lobby_thread;
-pthread_t recv_msg_thread;
-pthread_t multiplayer_game;
+void event_handler();
 
 enum state {MENU, SEARCH_MENU, SEARCHING, CONNECTED} state;
 
 // screen size
 int width, height;
 
-int quit = 0, iporsocket = 0;
-int i1 = 4, i2 = 6, i3 = 5;
+int selection = 0, quit = 0, iporsocket = 0;
+int i1 = 4, i2 = 6, i3 = 4;
 
 char ip[21], port[14], username[20];
 
@@ -56,89 +22,16 @@ char ip[21], port[14], username[20];
 SDL_Window *window;
 SDL_Renderer *renderer;
 TTF_Font *font24;
+TTF_Font *font32;
+TTF_Font *font40;
 TTF_Font *font64;
 
 SDL_Surface *textSurface;
 SDL_Texture *textTexture;
 SDL_Rect textRect;
 
-char* getIPv4()
-{
-    int fd;
-    struct ifreq ifr;
-    struct if_nameindex *if_nidxs, *intf;
-    if_nidxs = if_nameindex();
 
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
-
-    /* I want to get an IPv4 IP address */
-    ifr.ifr_addr.sa_family = AF_INET;
-
-    if(if_nidxs != NULL)
-    {
-        for (intf = if_nidxs; intf->if_index != 0 || intf->if_name != NULL; intf++)
-        {
-            /* I want IP address attached to "wlp0s20f3" */
-            strncpy(ifr.ifr_name, intf->if_name, IFNAMSIZ-1);
-        }
-        if_freenameindex(if_nidxs);
-    }
-    ioctl(fd, SIOCGIFADDR, &ifr);
-
-    close(fd);
-
-    /* return result */
-    char* ip = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
-
-    return ip;       
-}
-
-int connectGame(char* ip, int port)
-{
-    setbuf(stdin, 0);
-
-    struct sockaddr_in server_addr;
-    
-    //socket settings
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(ip);
-    server_addr.sin_port = htons(port);
-
-    // connect to the server
-    int err = connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr));
-    if (err == -1) {
-        printf("ERROR: connect.\n");
-        return EXIT_FAILURE;
-    }
-
-    // send the name
-    send(sockfd, username, NAME_LEN, 0);
-
-    if (pthread_create(&lobby_thread, NULL, &lobby, NULL) != 0) {
-        printf("ERROR: pthread.\n");
-        return EXIT_FAILURE;
-    }
-
-    if (pthread_create(&recv_msg_thread, NULL, (void*)recv_msg_handler, NULL) != 0) {
-        printf("ERROR: pthread.\n");
-        return EXIT_FAILURE;
-    }
-
-    while(1)
-    {
-        if (flag) {
-            printf("\nBye!\n");
-            break;
-        }
-    }
-
-    close(sockfd);
-
-    return 0;
-}
-
-int client_interface() {
+int main() {
 
     //Initliaze SDL
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
@@ -154,6 +47,8 @@ int client_interface() {
 	height = dm.h;
 
 	font24 = TTF_OpenFont("ressources/fonts/bit5x3.ttf", 24);
+	font32 = TTF_OpenFont("ressources/fonts/bit5x3.ttf", 32);
+	font40 = TTF_OpenFont("ressources/fonts/bit5x3.ttf", 40);
 	font64 = TTF_OpenFont("ressources/fonts/bit5x3.ttf", 64);
 
 	state = MENU;
@@ -162,7 +57,7 @@ int client_interface() {
 	ip[2] = ':';
 	ip[3] = ' ';
 	port[0] = 'P';
-	port[1] = 'O';
+	port[1] = 'o';
 	port[2] = 'R';
 	port[3] = 'T';
 	port[4] = ':';
@@ -182,10 +77,6 @@ int client_interface() {
 	//allow resize window
 	SDL_SetWindowResizable(window, SDL_TRUE);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    
-    int rep=0;
-    int portint;
-    char ip4[20];
 
     while(!quit) {
 		event_handler();
@@ -261,25 +152,23 @@ int client_interface() {
 				SDL_DestroyTexture(textTexture4);
 				break;
 			case SEARCHING:
-                sscanf(ip,"IP: %s",ip4);
-                sscanf(port,"PORT: %d_", &portint);
-                printf("ip: %s, port: %d\n",ip4,portint);
-                connectGame(ip4, portint);
-                return 0;
 				break;
 			case CONNECTED:
 				break;
 		}
 
+
 		SDL_RenderPresent(renderer);
 		SDL_Delay(10);
 		SDL_RenderClear(renderer);
+
     }
+
     
     return 0;
 }
 
-int event_handler() {
+void event_handler() {
 	SDL_Event event;
 	//event management
 	if (SDL_PollEvent(&event)) {
@@ -302,7 +191,7 @@ int event_handler() {
 						}else if(i2>6 && iporsocket==2) {
 							i2--;
 							port[i2+1] = '\0';
-						} else if(i3>5 && iporsocket==0) {
+						} else if(i3>4 && iporsocket==0) {
 							i3--;
 							username[i3+1] = '\0';
 						}
@@ -311,8 +200,6 @@ int event_handler() {
 						iporsocket = (iporsocket + 1) % 3;
 					} else if(key[0] == SDLK_RETURN) {
 						key[0] = ' ';
-                        state = SEARCHING;
-                        return NULL;
 					}
 					if(key[0] != SDLK_ESCAPE) {
 						if(i1<sizeof(ip)-2 && iporsocket==1 && key[0] != ' ') ip[i1] = key[0];
@@ -331,6 +218,7 @@ int event_handler() {
 						break;
 					case SDLK_RETURN:
 						if(state == MENU) {
+							if(selection == 0) state = SEARCH_MENU;
 						} else if(state == SEARCH_MENU) {
 							state = SEARCHING;
 						}
@@ -343,147 +231,4 @@ int event_handler() {
 				break;
 		}
 	}
-    return 0;
-}
-
-void catch_ctrl_c_and_exit()
-{
-    flag = 1;
-}
-
-
-
-void *multiplayerGame(void *arg)
-{
-    int playerStatus = player;
-    char namePlayer1[32];
-    char namePlayer2[32];
-
-    strcpy(namePlayer1, name);
-
-    char errorMessage[255] = {'\x00'};
-    char *nomeJogadorAtual;
-    char message[BUFFER_SZ] = {};
-
-    int receive = recv(sockfd, message, BUFFER_SZ, 0);
-
-    return NULL;
-}
-
-void *lobby(void *arg)
-{
-    char buffer[BUFFER_SZ] = {};
-
-    while(1)
-    {
-        str_overwrite_stdout();
-        fgets(buffer, BUFFER_SZ, stdin);
-        trim_lf(buffer, BUFFER_SZ);
-
-        if (strcmp(buffer, "exit") == 0) {
-            break;
-        } else {
-            send(sockfd, buffer, strlen(buffer), 0);
-        }
-
-        bzero(buffer, BUFFER_SZ);
-    }
-
-    catch_ctrl_c_and_exit(2);
-
-    return NULL;
-}
-
-void recv_msg_handler()
-{
-    char message[BUFFER_SZ] = {};
-
-    flashScreen();
-
-    while(1)
-    {
-        int receive = recv(sockfd, message, BUFFER_SZ, 0);
-
-        if (receive > 0) {
-            if (strcmp(message, "ok") == 0)
-            {
-                printf("Commands:\n");
-                printf("\t -list\t\t\t  List all tic-tac-toe rooms\n");
-                printf("\t -create\t\t  Create one tic-tac-toe room\n");
-                printf("\t -join {room number}\t  Join in one tic-tac-toe room\n");
-                printf("\t -leave\t\t\t  Back of the one tic-tac-toe room\n");
-                printf("\t -start\t\t\t  Starts one tic-tac-toe game\n\n");
-
-                str_overwrite_stdout();
-            }
-            else if (strcmp(message, "start game\n") == 0)
-            {
-                pthread_cancel(lobby_thread);
-                // pthread_kill(recv_msg_thread, SIGUSR1);   
-                
-                player = 1;
-                if (pthread_create(&multiplayer_game, NULL, (void*)multiplayerGame, NULL) != 0) {
-                    printf("ERROR: pthread\n");
-                    exit(EXIT_FAILURE);
-                }
-                pthread_detach(pthread_self());
-                pthread_cancel(recv_msg_thread);
-
-                // pthread_kill(lobby_thread, SIGUSR1);   
-            }
-            else if (strcmp(message, "start game2\n") == 0)
-            {
-                pthread_cancel(lobby_thread);
-                // pthread_kill(recv_msg_thread, SIGUSR1);   
-                
-                player = 2;
-                if (pthread_create(&multiplayer_game, NULL, (void*)multiplayerGame, NULL) != 0) {
-                    printf("ERROR: pthread\n");
-                    exit(EXIT_FAILURE);
-                }
-                pthread_detach(pthread_self());
-                pthread_cancel(recv_msg_thread);
-
-                // pthread_kill(lobby_thread, SIGUSR1);   
-            }
-            else
-            {
-                printf("%s", message);
-                str_overwrite_stdout();
-            }
-        } else if (receive == 0) {
-            break;
-        }
-
-        bzero(message, BUFFER_SZ);
-    }
-}
-
-void send_msg_handler()
-{
-    char buffer[BUFFER_SZ] = {};
-
-    while(1)
-    {
-        str_overwrite_stdout();
-        fgets(buffer, BUFFER_SZ, stdin);
-        trim_lf(buffer, BUFFER_SZ);
-
-        if (strcmp(buffer, "exit") == 0) {
-            break;
-        } else {
-            send(sockfd, buffer, strlen(buffer), 0);
-        }
-
-        bzero(buffer, BUFFER_SZ);
-    }
-
-    catch_ctrl_c_and_exit(2);
-}
-
-int main(int argc, char **argv)
-{
-    client_interface();
-
-    return 0;
 }

@@ -478,7 +478,9 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    char *ip = getIPv4();
+    char ip[16] = "127.0.0.1";
+
+    //char *ip = getIPv4();
     int port = atoi(argv[1]);
 
     int option = 1;
