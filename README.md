@@ -30,11 +30,6 @@ TODO
 ### Client
 
 ### Server
-## Authors
-
-- [@Magistis](https://github.com/GhislainVentre)
-- [@Maxem](https://github.com/Maxemmm)
-
 
 ## Deployment
 
@@ -70,8 +65,11 @@ Run server and client
   ./client
 ```
 
+## Authors
+
+- [@Magistis](https://github.com/GhislainVentre)
+- [@Maxem](https://github.com/Maxemmm)
 
 ## Feedback
 
 If you have any feedback, please reach out to us at maubert@gmail.com or ghislain.ventre@gmail.com
-
